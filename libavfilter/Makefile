@@ -152,6 +152,7 @@ OBJS-$(CONFIG_FLITE_FILTER)                  += asrc_flite.o
 OBJS-$(CONFIG_HILBERT_FILTER)                += asrc_hilbert.o
 OBJS-$(CONFIG_SINC_FILTER)                   += asrc_sinc.o
 OBJS-$(CONFIG_SINE_FILTER)                   += asrc_sine.o
+OBJS-$(CONFIG_ATONE_FILTER)                  += asrc_atone.o
 
 OBJS-$(CONFIG_ANULLSINK_FILTER)              += asink_anullsink.o
 

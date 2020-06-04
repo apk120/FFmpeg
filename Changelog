@@ -75,7 +75,7 @@ version <next>:
 - PFM decoder
 - dblur video filter
 - Real War KVAG muxer
-
+- atone filter
 
 version 4.2:
 - tpad filter
