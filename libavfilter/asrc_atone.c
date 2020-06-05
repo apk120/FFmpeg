@@ -269,12 +269,14 @@ static void schedule_timer_event(AtoneContext* s)
     delete_fluid_event(ev);
 }
 
+/*Determine the closest riff to the previous riff within three tries to make the transition between riffs smoother*/
 static int pick_riff(AtoneContext* s)
 {
     int min, dn, riff, bestriff;
 
     min = 999;
-    for (int i = 2; i >= 0; i--){
+    for (int i = 2; i >= 0; i--)
+    {
         riff = (rand()%RAND_MAX)%s->numriffs;
         if (s->last_note == 0)
             return(riff);
@@ -290,6 +292,7 @@ static int pick_riff(AtoneContext* s)
 
 }
 
+/*Determine the energy of the player which will affect the number of rests and holding tones*/
 static int energy_calc(int i, int numbars)
 {
     if (3*i < numbars)
@@ -303,9 +306,11 @@ static void play_riff(int riff, int energy, int note_duration, int note_time, At
 {
     int pnd = 0, next; 
     short pn = 0 ;
+    /*Beat importance values chosen such that off beat values are more likely to be skipped than on beat*/
     int biv[] = {28, 0, 7, 0, 14, 0, 7, 4};
 
-    for (int i = 0; i < NPR; i++){
+    for (int i = 0; i < NPR; i++)
+    {
         next = s->riffs[riff*NPR + i];
         if (next != H && next != R && ((energy + biv[i]) < rand()%100))
             next = (rand() < RAND_MAX/2)? H : R;
@@ -351,6 +356,8 @@ static void play_percussion(AtoneContext *s)
     }
 }
 
+/*Determine the pattern, tempo (to paly as 8th, 16th or 32nd notes) and add the riffs to sequencer
+Refernce: http://peterlangston.com/Papers/amc.pdf */
 static void schedule_riff_pattern(AtoneContext* s)
 {
     int note_time, note_duration, tempo, rpb, energy, riff;
