@@ -6125,6 +6125,62 @@ anoisesrc=d=60:c=pink:r=44100:a=0.5
 @end example
 @end itemize
 
+@section atone
+
+Generate algorithmic riff music.
+To compile filter configure ffmpeg with @code{--enable-libfluidsynth} 
+
+The filter accepts the following options:
+
+@table @option
+@item sample_rate, r
+Specify the sample rate. Default value is 44100 Hz.
+
+@item sfont
+Specify the location of soundfont file. Default value is 
+"/usr/share/sounds/sf2/FluidR3_GM.sf2"(for linux).
+
+@item duration, d
+Specify the duration of the generated audio stream. Not specifying this option
+results in playing tones for infinite length.
+
+@item velocity, v
+Specify the velocity of key press. Default value is 80.
+
+@item percussion_velocity
+Specify the velocity of key press for percussion track. Default value is 127.
+
+@item bpm
+Specify the beats per minute. Default is 100.
+
+@item instrument
+Specify the instrument. Available instruments are Acoustic-Grand, 
+Bright-Acoustic, ... as defined in the General Midi specifications. Default is Trumpet.
+
+@item percussion
+Specify the percussion track for beats. Available options are Jazz1, 
+Jazz2, ..., Jazz6, Rock1...4, Shuffle, Metronome. Default is Metronome.
+
+@item numbars
+Set the number of bars in which riff energy will change between 0 to 8. Default is 2.
+
+@item samples_per_frame
+Set the number of samples per each output frame. Default is 1024.
+@end table
+
+@subsection Examples
+
+@itemize
+
+@item
+Generate 10 seconds of random tones, with a key velocity of 100, midi channel 1
+and an tone change interval of 0.1s:
+@example
+atone=d=10:MIDI_channel=1:v=100:t=0.1:sfont="example.sf2":rule=193
+atone=duration=10:MIDI_channel=1:velocity=100:tone_change_interval=0.1:sfont="example.sf2":rule=193
+@end example
+@end itemize
+
 @section hilbert
 
 Generate odd-tap Hilbert transform FIR coefficients.
