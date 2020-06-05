@@ -44,17 +44,13 @@ typedef struct AtoneContext
 
     fluid_settings_t* settings;
     fluid_synth_t* synth;
-    fluid_sequencer_t *sequencer1;
     fluid_sequencer_t *sequencer;
     short synth_destination, client_destination;
     unsigned int beat_dur;
     unsigned int beats_pm;
-    unsigned int notes_pb;
     unsigned int time_marker;
-    unsigned int pattern_size;
     char *sfont;                      ///< soundfont file
     int sfont_id;
-    int midi_chan;                   ///< midi channel number
     int velocity;                    ///< velocity of key
     int percussion_velocity;         ///< velocity of key in percussion
     double changerate;              
@@ -62,13 +58,12 @@ typedef struct AtoneContext
     int *riffs;
     int numriffs;
     int last_note;
-    int biv[NPR];
     int framecount;
     char *instrument;
     percussion track;
     char *track_name;
     int numbars;
-
+    
 }AtoneContext;
 
 #define CONTEXT AtoneContext
@@ -100,10 +95,8 @@ static const AVOption atone_options[] = {
     OPT_DUR("d",                 duration,                   0,                                          0, INT64_MAX,           "set the audio duration",),
     OPT_STR("sfont",             sfont,                      "/usr/share/sounds/sf2/FluidR3_GM.sf2",     0, 0,                   "set the soundfont file",),
     OPT_INT("samples_per_frame", nb_samples,                 1024,                                       0, INT_MAX,             "set the number of samples per frame",),
-    OPT_INT("MIDI_channel",      midi_chan,                  0,                                          0, 127,                 "set the MIDI Channel",),
     OPT_INT("bpm",               beats_pm,                   100,                                        0, INT_MAX,             "set the beats per minute",),
-    OPT_INT("notes_per_beat",    notes_pb,                   4,                                          0, INT_MAX,             "set the notes per beat",),
-    OPT_STR("instrument",        instrument,                 "Trumpet",                     0, 0,                   "set the instrument",),
+    OPT_STR("instrument",        instrument,                 "Trumpet",                                  0, 0,                   "set the instrument",),
     OPT_STR("percussion",        track_name,                 "Metronome",                                0, 0,                   "set the percussion track",),
     OPT_INT("numbars",           numbars,                    2,                                          0, 8,                   "set the riff bars",),
     {NULL}
@@ -119,7 +112,7 @@ static void set_percussion_track(AtoneContext *s);
 static av_cold int init(AVFilterContext *ctx)
 {
     AtoneContext *s = ctx->priv;
-    int biv[] = {28, 0, 7, 0, 14, 0, 7, 4};
+    
 
     /*Initialise the fluidsynth settings object followed by synthesizer*/
     s->settings = new_fluid_settings();
@@ -159,18 +152,15 @@ static av_cold int init(AVFilterContext *ctx)
     if (s->changerate<1.0)
         s->changerate = 1.0;
 
-    set_percussion_track(s);
-    instrument_select(find_instrument(s->instrument), s->time_marker, s);
-
     s->last_note = 0;
     s->numriffs = sizeof(riff)/(NPR* sizeof(int));
-    
+
     for (int i = 0; i < s->numriffs*NPR ; i++)
         s->riffs[i] = riff[i];
     
-    for (int i = 0; i < NPR ; i++)
-        s->biv[i] = biv[i];
-    
+    set_percussion_track(s);
+    instrument_select(find_instrument(s->instrument), s->time_marker, s);
+
     return 0;
 }
 
@@ -196,6 +186,7 @@ static av_cold int config_props(AVFilterLink *outlink)
     if (s->framecount == INT_MAX)
         s->framecount = 0;
 
+        
     return 0;
 }
 
@@ -238,7 +229,7 @@ static void instrument_select(int prog_no, unsigned int ticks, AtoneContext* s)
 
     fluid_event_set_source(ev, -1);
     fluid_event_set_dest(ev,s->synth_destination);
-    fluid_event_program_change(ev, s->midi_chan, prog_no);
+    fluid_event_program_change(ev, 0, prog_no);
     fluid_sequencer_send_at(s->sequencer, ev, ticks, 1);
     delete_fluid_event(ev);
 }
@@ -313,10 +304,11 @@ static void play_riff(int riff, int energy, int note_duration, int note_time, At
 {
     int pnd = 0, next; 
     short pn = 0 ;
+    int biv[] = {28, 0, 7, 0, 14, 0, 7, 4};
 
     for (int i = 0; i < NPR; i++){
         next = s->riffs[riff*NPR + i];
-        if (next != H && next != R && ((energy + s->biv[i]) < rand()%100))
+        if (next != H && next != R && ((energy + biv[i]) < rand()%100))
             next = (rand() < RAND_MAX/2)? H : R;
         if (next == H){
             pnd ++;
@@ -324,9 +316,9 @@ static void play_riff(int riff, int energy, int note_duration, int note_time, At
         }
         
         if (pn != R){
-            schedule_noteon(s->midi_chan, pn, note_time, s->velocity, s);
+            schedule_noteon(0, pn, note_time, s->velocity, s);
             note_time += pnd*note_duration;
-            schedule_noteoff(s->midi_chan, pn, note_time, s);
+            schedule_noteoff(0, pn, note_time, s);
             s->last_note = pn;
         }
         pn = next;
@@ -334,9 +326,9 @@ static void play_riff(int riff, int energy, int note_duration, int note_time, At
     }
 
     if (pn != R && pn != H){
-        schedule_noteon(s->midi_chan, pn, note_time, s->velocity, s);
+        schedule_noteon(0, pn, note_time, s->velocity, s);
         note_time += pnd*note_duration;
-        schedule_noteoff(s->midi_chan, pn, note_time, s);
+        schedule_noteoff(0, pn, note_time, s);
         s->last_note = pn;
     }
            

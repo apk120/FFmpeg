@@ -1,3 +1,22 @@
+/*
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+#ifndef AVFILTER_NOTEDEF_H
+#define AVFILTER_NOTEDEF_H
 #include <stdlib.h>
 #include<string.h>
 
@@ -233,5 +252,5 @@ const int riff[] = {Eb4,  D4,  A4,  F4,  E4,  C5,  A4,  A4,  /*  0 */
                 B5,  C6,  A5,  E5,  G5,  B5,  A5,   H,  /* 37  */
                 B5,  D6,  C6,  E5, Ab5,  B5,  A5,  C5,  // 38  Django  Rheinhart  
                 C6,  B5,  A5,  G5, Gb5,  E5, Eb5,  C5} ;/* 39  */
-    
+#endif/*AVFILTER_NOTEDEF_H*/ 
 
