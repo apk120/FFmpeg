@@ -70,7 +70,7 @@ typedef struct
     percussion_structure note[];
 }percussion;
 
-/*Define drum beats...
+/*Define some drum beats...
 Beat: Whole note = 1, Half note = 2, Quater note = 4, ..., Number of beats: Whole note = 4/1, Half note = 4/2, Quater note = 4/4
 Note 1 does not produce any sound*/
 #define jazz1 {12,  {{Bass_Drum_1, Ride_Cymbal_2, 1, 12},\
