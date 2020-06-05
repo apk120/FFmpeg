@@ -50,7 +50,6 @@ typedef struct AtoneContext
     unsigned int beats_pm;
     unsigned int time_marker;
     char *sfont;                      ///< soundfont file
-    int sfont_id;
     int velocity;                    ///< velocity of key
     int percussion_velocity;         ///< velocity of key in percussion
     double changerate;              
@@ -112,7 +111,7 @@ static void set_percussion_track(AtoneContext *s);
 static av_cold int init(AVFilterContext *ctx)
 {
     AtoneContext *s = ctx->priv;
-    
+    int sfont_id;
 
     /*Initialise the fluidsynth settings object followed by synthesizer*/
     s->settings = new_fluid_settings();
@@ -127,8 +126,8 @@ static av_cold int init(AVFilterContext *ctx)
         return AVERROR_EXTERNAL;
     }
 
-    s->sfont_id = fluid_synth_sfload(s->synth, s->sfont, 1);
-    if(s->sfont_id == FLUID_FAILED){
+    sfont_id = fluid_synth_sfload(s->synth, s->sfont, 1);
+    if(sfont_id == FLUID_FAILED){
         av_log(s, AV_LOG_ERROR, "Loading the Soundfont Failed");
         return AVERROR_EXTERNAL;
     }
