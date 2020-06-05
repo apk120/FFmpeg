@@ -20,8 +20,9 @@
 #include <stdlib.h>
 #include<string.h>
 
-/* _ = minus, s = sharp, b = flat
-    H = hold tone, R = Rest*/
+/*Define notes as per the General Midi specifications 
+*_ = minus, s = sharp, b = flat
+*   H = hold tone, R = Rest*/
 enum notes{C_1, Cs_1, Db_1 = 1, D_1, Ds_1, Eb_1 =3, E_1, F_1, Fs_1, Gb_1 = 6, G_1, Gs_1, Ab_1 = 8, A_1, As_1, Bb_1 =10, B_1,
             C0, Cs0, Db0 = 13, D0, Ds0, Eb0 = 15, E0, F0, Fs0, Gb0 = 18, G0, Gs0, Ab0 = 20, A0, As0, Bb0 = 22, B0,
             C1, Cs1, Db1 = 25, D1, Ds1, Eb1 = 27, E1, F1, Fs1, Gb1 = 30, G1, Gs1, Ab1 = 32, A1, As1, Bb1 = 34, B1,
