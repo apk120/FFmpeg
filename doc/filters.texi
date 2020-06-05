@@ -6173,11 +6173,11 @@ Set the number of samples per each output frame. Default is 1024.
 @itemize
 
 @item
-Generate 10 seconds of random tones, with a key velocity of 100, midi channel 1
-and an tone change interval of 0.1s:
+Generate 10 seconds of riff music, with a key velocity of 100, instrument as Electric Guitar(jazz) 
+and percussion track as Jazz3:
 @example
-atone=d=10:v=100:t=0.1:sfont="example.sf2":instrument=Electric-Guitar-Jazz:percussion=Jazz3
-atone=duration=10:velocity=100:tone_change_interval=0.1:sfont="example.sf2":instrument=Electric-Guitar-Jazz:percussion=Jazz3
+atone=d=10:v=100:sfont="example.sf2":instrument=Electric-Guitar-Jazz:percussion=Jazz3
+atone=duration=10:velocity=100:sfont="example.sf2":instrument=Electric-Guitar-Jazz:percussion=Jazz3
 @end example
 @end itemize
 
