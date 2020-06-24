@@ -348,6 +348,15 @@ static void export_stream_params(HEVCContext *s, const HEVCSPS *sps)
         avctx->colorspace      = AVCOL_SPC_UNSPECIFIED;
     }
 
+    avctx->chroma_sample_location = AVCHROMA_LOC_UNSPECIFIED;
+    if (sps->chroma_format_idc == 1) {
+        if (sps->vui.chroma_loc_info_present_flag) {
+            if (sps->vui.chroma_sample_loc_type_top_field <= 5)
+                avctx->chroma_sample_location = sps->vui.chroma_sample_loc_type_top_field + 1;
+        } else
+            avctx->chroma_sample_location = AVCHROMA_LOC_LEFT;
+    }
+
     if (vps->vps_timing_info_present_flag) {
         num = vps->vps_num_units_in_tick;
         den = vps->vps_time_scale;
@@ -2793,6 +2802,20 @@ static int set_side_data(HEVCContext *s)
 
         s->avctx->properties |= FF_CODEC_PROPERTY_CLOSED_CAPTIONS;
     }
+
+    for (int i = 0; i < s->sei.unregistered.nb_buf_ref; i++) {
+        HEVCSEIUnregistered *unreg = &s->sei.unregistered;
+
+        if (unreg->buf_ref[i]) {
+            AVFrameSideData *sd = av_frame_new_side_data_from_buf(out,
+                    AV_FRAME_DATA_SEI_UNREGISTERED,
+                    unreg->buf_ref[i]);
+            if (!sd)
+                av_buffer_unref(&unreg->buf_ref[i]);
+            unreg->buf_ref[i] = NULL;
+        }
+    }
+    s->sei.unregistered.nb_buf_ref = 0;
 
     return 0;
 }

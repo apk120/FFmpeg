@@ -221,7 +221,6 @@ end:
 }
 
 /**
- * Note: this function can read out of range and crash for corrupt streams.
  * Changing this would eat up any speed benefits it has.
  * Do not use "fast" flag if you need the code to be robust.
  */
@@ -397,7 +396,6 @@ end:
 }
 
 /**
- * Note: this function can read out of range and crash for corrupt streams.
  * Changing this would eat up any speed benefits it has.
  * Do not use "fast" flag if you need the code to be robust.
  */
@@ -559,7 +557,6 @@ static inline int mpeg2_decode_block_intra(MpegEncContext *s,
 }
 
 /**
- * Note: this function can read out of range and crash for corrupt streams.
  * Changing this would eat up any speed benefits it has.
  * Do not use "fast" flag if you need the code to be robust.
  */
@@ -2245,13 +2242,25 @@ static int mpeg_decode_a53_cc(AVCodecContext *avctx,
         /* extract A53 Part 4 CC data */
         int cc_count = p[5] & 0x1f;
         if (cc_count > 0 && buf_size >= 7 + cc_count * 3) {
-            av_freep(&s1->a53_caption);
-            s1->a53_caption_size = cc_count * 3;
-            s1->a53_caption      = av_malloc(s1->a53_caption_size);
+            if (s1->a53_caption && s1->a53_caption_size > 0) {
+                uint8_t *old_a53_caption = s1->a53_caption;
+                int old_a53_caption_size = s1->a53_caption_size;
+
+                s1->a53_caption_size = old_a53_caption_size + cc_count * 3;
+                s1->a53_caption      = av_malloc(s1->a53_caption_size);
+                if (s1->a53_caption) {
+                    memcpy(s1->a53_caption, old_a53_caption, old_a53_caption_size);
+                    memcpy(s1->a53_caption + old_a53_caption_size, p + 7, cc_count * 3);
+                }
+                av_freep(&old_a53_caption);
+            } else {
+                s1->a53_caption_size = cc_count * 3;
+                s1->a53_caption      = av_malloc(s1->a53_caption_size);
+                if (s1->a53_caption)
+                    memcpy(s1->a53_caption, p + 7, s1->a53_caption_size);
+            }
             if (!s1->a53_caption) {
                 s1->a53_caption_size = 0;
-            } else {
-                memcpy(s1->a53_caption, p + 7, s1->a53_caption_size);
             }
             avctx->properties |= FF_CODEC_PROPERTY_CLOSED_CAPTIONS;
         }
@@ -2497,7 +2506,7 @@ static int decode_chunks(AVCodecContext *avctx, AVFrame *picture,
                     return ret;
                 else if (ret) {
                     // FIXME: merge with the stuff in mpeg_decode_slice
-                    if (s2->last_picture_ptr || s2->low_delay)
+                    if (s2->last_picture_ptr || s2->low_delay || s2->pict_type == AV_PICTURE_TYPE_B)
                         *got_output = 1;
                 }
             }
@@ -2876,8 +2885,7 @@ static av_cold int mpeg_decode_end(AVCodecContext *avctx)
 {
     Mpeg1Context *s = avctx->priv_data;
 
-    if (s->mpeg_enc_ctx_allocated)
-        ff_mpv_common_end(&s->mpeg_enc_ctx);
+    ff_mpv_common_end(&s->mpeg_enc_ctx);
     av_freep(&s->a53_caption);
     return 0;
 }
@@ -2894,7 +2902,7 @@ AVCodec ff_mpeg1video_decoder = {
     .capabilities          = AV_CODEC_CAP_DRAW_HORIZ_BAND | AV_CODEC_CAP_DR1 |
                              AV_CODEC_CAP_TRUNCATED | AV_CODEC_CAP_DELAY |
                              AV_CODEC_CAP_SLICE_THREADS,
-    .caps_internal         = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM,
+    .caps_internal         = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM | FF_CODEC_CAP_INIT_CLEANUP,
     .flush                 = flush,
     .max_lowres            = 3,
     .update_thread_context = ONLY_IF_THREADS_ENABLED(mpeg_decode_update_thread_context),
@@ -2927,7 +2935,7 @@ AVCodec ff_mpeg2video_decoder = {
     .capabilities   = AV_CODEC_CAP_DRAW_HORIZ_BAND | AV_CODEC_CAP_DR1 |
                       AV_CODEC_CAP_TRUNCATED | AV_CODEC_CAP_DELAY |
                       AV_CODEC_CAP_SLICE_THREADS,
-    .caps_internal  = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM,
+    .caps_internal  = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM | FF_CODEC_CAP_INIT_CLEANUP,
     .flush          = flush,
     .max_lowres     = 3,
     .profiles       = NULL_IF_CONFIG_SMALL(ff_mpeg2_video_profiles),
@@ -2971,7 +2979,7 @@ AVCodec ff_mpegvideo_decoder = {
     .close          = mpeg_decode_end,
     .decode         = mpeg_decode_frame,
     .capabilities   = AV_CODEC_CAP_DRAW_HORIZ_BAND | AV_CODEC_CAP_DR1 | AV_CODEC_CAP_TRUNCATED | AV_CODEC_CAP_DELAY | AV_CODEC_CAP_SLICE_THREADS,
-    .caps_internal  = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM,
+    .caps_internal  = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM | FF_CODEC_CAP_INIT_CLEANUP,
     .flush          = flush,
     .max_lowres     = 3,
 };

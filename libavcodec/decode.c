@@ -66,7 +66,7 @@ typedef struct FramePool {
 
 static int apply_param_change(AVCodecContext *avctx, const AVPacket *avpkt)
 {
-    int size = 0, ret;
+    int size, ret;
     const uint8_t *data;
     uint32_t flags;
     int64_t val;
@@ -1911,10 +1911,12 @@ end:
         frame->height = avctx->height;
     }
 
-    return 0;
 fail:
-    av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
-    av_frame_unref(frame);
+    if (ret < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        av_frame_unref(frame);
+    }
+
     return ret;
 }
 

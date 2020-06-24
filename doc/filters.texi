@@ -4197,6 +4197,9 @@ If not specified, or the expressed duration is negative, the audio is
 supposed to be generated forever.
 Only used if plugin have zero inputs.
 
+@item latency, l
+Enable latency compensation, by default is disabled.
+Only used if plugin have inputs.
 @end table
 
 @subsection Examples
@@ -14398,8 +14401,14 @@ It accepts the following values:
 @item yuv420
 force YUV420 output
 
+@item yuv420p10
+force YUV420p10 output
+
 @item yuv422
 force YUV422 output
+
+@item yuv422p10
+force YUV422p10 output
 
 @item yuv444
 force YUV444 output
@@ -19369,6 +19378,46 @@ Truncated square pyramid projection.
 @item he
 @item hequirect
 Half equirectangular projection.
+
+@item equisolid
+Equisolid format.
+
+Format specific options:
+@table @option
+@item h_fov
+@item v_fov
+@item d_fov
+Set output horizontal/vertical/diagonal field of view. Values in degrees.
+
+If diagonal field of view is set it overrides horizontal and vertical field of view.
+
+@item ih_fov
+@item iv_fov
+@item id_fov
+Set input horizontal/vertical/diagonal field of view. Values in degrees.
+
+If diagonal field of view is set it overrides horizontal and vertical field of view.
+@end table
+
+@item og
+Orthographic format.
+
+Format specific options:
+@table @option
+@item h_fov
+@item v_fov
+@item d_fov
+Set output horizontal/vertical/diagonal field of view. Values in degrees.
+
+If diagonal field of view is set it overrides horizontal and vertical field of view.
+
+@item ih_fov
+@item iv_fov
+@item id_fov
+Set input horizontal/vertical/diagonal field of view. Values in degrees.
+
+If diagonal field of view is set it overrides horizontal and vertical field of view.
+@end table
 @end table
 
 @item interp
@@ -19532,6 +19581,20 @@ Partial of full denoising (limited coefficients shrinking), from 0 to 100. Defau
 
 @item planes
 A list of the planes to process. By default all planes are processed.
+
+@item type
+The threshold type the filter will use.
+
+It accepts the following values:
+@table @samp
+@item universal
+Threshold used is same for all decompositions.
+
+@item bayes
+Threshold used depends also on each decomposition coefficients.
+@end table
+
+Default is universal.
 @end table
 
 @section vectorscope

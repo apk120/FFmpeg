@@ -219,7 +219,7 @@ static const AVCodec *find_probe_decoder(AVFormatContext *s, const AVStream *st,
         const AVCodec *probe_codec = NULL;
         void *iter = NULL;
         while ((probe_codec = av_codec_iterate(&iter))) {
-            if (probe_codec->id == codec_id &&
+            if (probe_codec->id == codec->id &&
                     av_codec_is_decoder(probe_codec) &&
                     !(probe_codec->capabilities & (AV_CODEC_CAP_AVOID_PROBING | AV_CODEC_CAP_EXPERIMENTAL))) {
                 return probe_codec;
@@ -1359,7 +1359,7 @@ static void compute_pkt_fields(AVFormatContext *s, AVStream *st,
             if (st->last_IP_duration == 0 && (uint64_t)pkt->duration <= INT32_MAX)
                 st->last_IP_duration = pkt->duration;
             if (pkt->dts != AV_NOPTS_VALUE)
-                st->cur_dts = pkt->dts + st->last_IP_duration;
+                st->cur_dts = av_sat_add64(pkt->dts, st->last_IP_duration);
             if (pkt->dts != AV_NOPTS_VALUE &&
                 pkt->pts == AV_NOPTS_VALUE &&
                 st->last_IP_duration > 0 &&
@@ -4132,8 +4132,8 @@ FF_ENABLE_DEPRECATION_WARNINGS
             avcodec_string(buf, sizeof(buf), st->internal->avctx, 0);
             av_log(ic, AV_LOG_WARNING,
                    "Could not find codec parameters for stream %d (%s): %s\n"
-                   "Consider increasing the value for the 'analyzeduration' and 'probesize' options\n",
-                   i, buf, errmsg);
+                   "Consider increasing the value for the 'analyzeduration' (%"PRId64") and 'probesize' (%"PRId64") options\n",
+                   i, buf, errmsg, ic->max_analyze_duration, ic->probesize);
         } else {
             ret = 0;
         }
