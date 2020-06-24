@@ -205,8 +205,22 @@ const percussion Track_7 = rock1;
 const percussion Track_8 = rock2;
 const percussion Track_9 = rock3;
 const percussion Track_10 = rock4;
-const percussion Track_11 = shuffle;
-const percussion Track_12 = metronome;
+const percussion Track_11 = {12, {{Bass_Drum_1, 1, Closed_Hi_Hat, 12}, \
+                                    {1, 1, 1, 12}, \
+                                    {1, 1, Closed_Hi_Hat, 12}, \
+                                    {Acoustic_Snare, 1, Closed_Hi_Hat, 12}, \
+                                    {1, 1, 1, 12}, \
+                                    {1, 1, Closed_Hi_Hat, 12}, \
+                                    {Bass_Drum_1, 1, Closed_Hi_Hat, 12}, \
+                                    {1, 1, 1, 12}, \
+                                    {1, 1, Closed_Hi_Hat, 12}, \
+                                    {Acoustic_Snare, 1, Closed_Hi_Hat, 12}, \
+                                    {1, 1, 1, 12}, \
+                                    {1, 1, Closed_Hi_Hat, 12}}};
+static const percussion Track_12 = {4, {{Metronome_Click, 1, 1, 4}, \
+                                        {Metronome_Click, 1, 1, 4}, \
+                                        {Metronome_Click, 1, 1, 4}, \
+                                        {Metronome_Click, 1, 1, 4}}};
 
 const char *percussion_tracks[] = {"Jazz1", "Jazz2", "Jazz3", "Jazz4", "Jazz5", "Jazz6", "Rock1", "Rock2", "Rock3", "Rock4", "Shuffle", "Metronome"};
 
@@ -253,5 +267,12 @@ const int riff[] = {Eb4,  D4,  A4,  F4,  E4,  C5,  A4,  A4,  /*  0 */
                 B5,  C6,  A5,  E5,  G5,  B5,  A5,   H,  /* 37  */
                 B5,  D6,  C6,  E5, Ab5,  B5,  A5,  C5,  // 38  Django  Rheinhart  
                 C6,  B5,  A5,  G5, Gb5,  E5, Eb5,  C5} ;/* 39  */
+
+typedef struct lsys
+{
+    int note;
+    int dur;
+}lsys;
+#define L_MAX_LENGTH 45000
 #endif/*AVFILTER_NOTEDEF_H*/ 
 

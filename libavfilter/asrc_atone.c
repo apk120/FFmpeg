@@ -35,15 +35,15 @@
 
 typedef struct AtoneContext
 {
-    const AVClass* class;
+    const AVClass *class;
     int64_t duration;
     int nb_samples;
     int sample_rate;
     int64_t pts;
     int infinite;
 
-    fluid_settings_t* settings;
-    fluid_synth_t* synth;
+    fluid_settings_t *settings;
+    fluid_synth_t *synth;
     fluid_sequencer_t *sequencer;
     short synth_destination, client_destination;
     unsigned int beat_dur;
@@ -62,7 +62,19 @@ typedef struct AtoneContext
     percussion track;
     char *track_name;
     int numbars;
-    
+    int64_t seed;
+    AVLFG c;
+
+    char *axiom;
+    char *rule1;
+    char *rule2;
+    char *str;
+    char *prevgen;
+    char *nextgen;
+    lsys *system;
+    int generations;
+    int lstate;
+    int max;
 }AtoneContext;
 
 #define CONTEXT AtoneContext
@@ -94,10 +106,14 @@ static const AVOption atone_options[] = {
     OPT_DUR("d",                 duration,                   0,                                          0, INT64_MAX,           "set the audio duration",),
     OPT_STR("sfont",             sfont,                      "/usr/share/sounds/sf2/FluidR3_GM.sf2",     0, 0,                   "set the soundfont file",),
     OPT_INT("samples_per_frame", nb_samples,                 1024,                                       0, INT_MAX,             "set the number of samples per frame",),
-    OPT_INT("bpm",               beats_pm,                   100,                                        0, INT_MAX,             "set the beats per minute",),
-    OPT_STR("instrument",        instrument,                 "Trumpet",                                  0, 0,                   "set the instrument",),
+    OPT_INT("bpm",               beats_pm,                   60,                                        0, INT_MAX,             "set the beats per minute",),
+    OPT_STR("instrument",        instrument,                 "Celesta",                                  0, 0,                   "set the instrument",),
     OPT_STR("percussion",        track_name,                 "Metronome",                                0, 0,                   "set the percussion track",),
     OPT_INT("numbars",           numbars,                    2,                                          0, 8,                   "set the riff bars",),
+    OPT_STR("axiom",             axiom,                      "X",                                        0, 0,                   "set the axiom for 0L system",),
+    OPT_STR("rule1",             rule1,                      "X->F{+F++X}{-F}FX",                          0, 0,                   "set the rule1 for 0L system",),
+    OPT_STR("rule2",             rule2,                      "F->F++{F---F+}",                                    0, 0,                   "set the rule2 for 0L system",),
+    OPT_INT("gen",               generations,                3,                                          0, INT_MAX,            "set the number of generations for 0L system",),
     {NULL}
 };
 
@@ -107,12 +123,11 @@ static void sequencer_callback(unsigned int time, fluid_event_t *event, fluid_se
 static void instrument_select(int prog_no, unsigned int ticks, AtoneContext* s);
 static int find_instrument(const char* instrument);
 static void set_percussion_track(AtoneContext *s);
-
+static void schedule_0L_pattern(AtoneContext *s);
 static av_cold int init(AVFilterContext *ctx)
 {
     AtoneContext *s = ctx->priv;
     int sfont_id;
-
     /*Initialise the fluidsynth settings object followed by synthesizer*/
     s->settings = new_fluid_settings();
     if (s->settings == NULL){
@@ -134,7 +149,40 @@ static av_cold int init(AVFilterContext *ctx)
     
     if (!(s->riffs = av_malloc(sizeof(riff))))
         return AVERROR(ENOMEM);
-    
+    s->prevgen = av_malloc(sizeof(char)*L_MAX_LENGTH);
+    s->nextgen = av_malloc(sizeof(char)*L_MAX_LENGTH);
+    s->system = av_malloc(sizeof(lsys)*L_MAX_LENGTH);
+    strcpy(s->prevgen, s->axiom);
+    printf("yaas1\n");
+    for (int i = 0 ; i < s->generations ; i++){
+        
+        int j = 0, length = 0;
+        char c;
+        while (s->prevgen[j] != '\0'){
+            c = s->prevgen[j];
+            if (c == s->rule1[0]){
+                memcpy(s->nextgen+length, s->rule1+3, strlen(s->rule1)-3);
+                length += strlen(s->rule1)-3;
+            }
+                
+            else if (c == s->rule2[0]){
+                memcpy(s->nextgen+length, s->rule2+3, strlen(s->rule2)-3);
+                length += strlen(s->rule2)-3;
+            }
+                
+            else
+            {
+                memcpy(s->nextgen+length, s->prevgen+j, 1);
+                length +=1;
+            }
+            j++;
+        }
+        s->nextgen[strlen(s->nextgen)] = '\0';
+        memcpy(s->prevgen, s->nextgen, strlen(s->nextgen)+1);
+        strcpy(s->nextgen, "");
+    }
+    printf("%s\n", s->prevgen);
+    schedule_0L_pattern(s);
     s->framecount=0;
     srand(getpid());
     s->sequencer = new_fluid_sequencer2(0);
@@ -150,16 +198,18 @@ static av_cold int init(AVFilterContext *ctx)
     s->changerate = (4*s->beat_dur)*s->sample_rate/s->nb_samples;
     if (s->changerate<1.0)
         s->changerate = 1.0;
-
+    s->lstate = 0;
     s->last_note = 0;
+    s->max;
     s->numriffs = sizeof(riff)/(NPR* sizeof(int));
 
     for (int i = 0; i < s->numriffs*NPR ; i++)
         s->riffs[i] = riff[i];
-    
+    printf("ssss\n");
     set_percussion_track(s);
+    printf("ssss\n");
     instrument_select(find_instrument(s->instrument), s->time_marker, s);
-
+    printf("ssss\n");
     return 0;
 }
 
@@ -171,6 +221,9 @@ static av_cold void uninit(AVFilterContext *ctx)
     delete_fluid_synth(s->synth);
     delete_fluid_settings(s->settings);
     av_freep(&s->riffs);
+    av_freep(&s->prevgen);
+    av_freep(&s->nextgen);
+    av_freep(&s->system);
 }
 
 static av_cold int config_props(AVFilterLink *outlink)
@@ -184,7 +237,8 @@ static av_cold int config_props(AVFilterLink *outlink)
 
     if (s->framecount == INT_MAX)
         s->framecount = 0;
-
+    //s->seed = av_get_random_seed();
+    av_lfg_init(&s->c, 10);
         
     return 0;
 }
@@ -195,7 +249,7 @@ static void set_percussion_track(AtoneContext *s){
     for (i = 0 ; i < sizeof(percussion_tracks)/sizeof(percussion_tracks[0]) ; i++)
         if (strcmp(percussion_tracks[i], s->track_name) == 0)
             break;
-    
+    printf("ssss\n");
     switch (i)
     {
     case 0: s->track = Track_1; break;
@@ -211,6 +265,7 @@ static void set_percussion_track(AtoneContext *s){
     case 10: s->track = Track_11; break;
     default: s->track = Track_12; break;
     }   
+    printf("%d\n", s->track.length);
 }
 
 static int find_instrument(const char* instrument)
@@ -271,13 +326,13 @@ static void schedule_timer_event(AtoneContext* s)
 
 /*Determine the closest riff to the previous riff within three tries to make the transition between riffs smoother*/
 static int pick_riff(AtoneContext* s)
-{
+{   AVLFG f;
     int min, dn, riff, bestriff;
-
+    unsigned r = av_lfg_get(&f);
     min = 999;
     for (int i = 2; i >= 0; i--)
     {
-        riff = (rand()%RAND_MAX)%s->numriffs;
+        riff = (r)%s->numriffs;
         if (s->last_note == 0)
             return(riff);
         dn = abs(s->last_note - s->riffs[riff*NPR]);
@@ -341,7 +396,8 @@ static void play_riff(int riff, int energy, int note_duration, int note_time, At
 static void play_percussion(AtoneContext *s)
 {
     int note_time = s->time_marker;
-
+    
+    printf("ssssp\n");
     for (int i = 0; i < s->track.length; i++)
     {
         /*percussion instruments in channel 10 */ 
@@ -354,6 +410,7 @@ static void play_percussion(AtoneContext *s)
         schedule_noteoff(9, s->track.note[i].instrument_2, note_time, s);
         schedule_noteoff(9, s->track.note[i].instrument_3, note_time, s);
     }
+    
 }
 
 /*Determine the pattern, tempo (to paly as 8th, 16th or 32nd notes) and add the riffs to sequencer
@@ -361,7 +418,8 @@ Refernce: http://peterlangston.com/Papers/amc.pdf */
 static void schedule_riff_pattern(AtoneContext* s)
 {
     int note_time, note_duration, tempo, rpb, energy, riff;
-
+    AVLFG f;
+    unsigned r = av_lfg_get(&f);
     note_time = s->time_marker;
     tempo = 1;
 
@@ -384,6 +442,68 @@ static void schedule_riff_pattern(AtoneContext* s)
     s->time_marker += 4*s->beat_dur;   
 }
 
+static void play_0L_pattern(AtoneContext *s)
+{
+    //
+    int note_time = s->time_marker, sum=0, i;
+    for (i =s->lstate; i<s->lstate+1000 ; i++){
+        printf("ssss\n");
+        sum +=s->system[i].dur;
+        printf("ssss\n");
+        if (sum > 32){
+            sum =i;
+            break;
+        }
+    }
+    printf("ssss\n");
+    for (i =(s->lstate%s->max); i<((sum+s->lstate)%s->max); i++)
+    {
+        printf("%d\n", s->system[0].note);
+        if (s->system[i].note == R)
+        {
+            note_time += s->beat_dur*s->system[i].dur/8;
+        }
+        else
+        {
+            schedule_noteon(0, s->system[i].note, note_time, s->velocity, s);
+            note_time += s->beat_dur*s->system[i].dur/8;
+            schedule_noteoff(0, s->system[i].note, note_time, s);
+        }
+        
+    }
+    printf("ssss\n");
+    s->lstate = i;
+}
+static void schedule_0L_pattern(AtoneContext *s)
+{
+    char *token,c;
+    int  j = 0, length = 0, k = 0;
+    int scale[] = {C4, D4, E4, F4, G4, A4}, note_state = 0, dur_state = 1, sys_state = 0;
+
+    printf("yaas2\n");
+    //printf("%s\n", s->axiom);
+    for (int i = 0 ; i < strlen(s->prevgen) ; i++){
+        c = s->prevgen[i]; 
+        switch(c){
+            case 'F': dur_state*=2 ;break;
+            case '+': note_state++; if (note_state >= 6) note_state %= 6; break;
+            case '-': note_state--; if (note_state < 0) note_state += 6;break;
+            case '{': s->system[sys_state].note = scale[note_state%6]; s->system[sys_state].dur = dur_state; sys_state++; break;
+            case '}': note_state = 0; dur_state = 1; break;
+            case 'X': s->system[sys_state].note = R; s->system[sys_state].dur = dur_state; dur_state = 1; sys_state++; break;
+        }
+    }
+    s->max = sys_state;
+    printf("%d\n", s->max);
+    //play_0L_pattern(s, system);
+}
+static void schedule_L_pattern(AtoneContext *s)
+{
+       
+    play_0L_pattern(s);
+    play_percussion(s);
+    s->time_marker += 4*s->beat_dur;
+}
 static void sequencer_callback(unsigned int time, fluid_event_t *event, fluid_sequencer_t *seq, void* data)
 {
     schedule_timer_event(data);
