@@ -205,22 +205,8 @@ const percussion Track_7 = rock1;
 const percussion Track_8 = rock2;
 const percussion Track_9 = rock3;
 const percussion Track_10 = rock4;
-const percussion Track_11 = {12, {{Bass_Drum_1, 1, Closed_Hi_Hat, 12}, \
-                                    {1, 1, 1, 12}, \
-                                    {1, 1, Closed_Hi_Hat, 12}, \
-                                    {Acoustic_Snare, 1, Closed_Hi_Hat, 12}, \
-                                    {1, 1, 1, 12}, \
-                                    {1, 1, Closed_Hi_Hat, 12}, \
-                                    {Bass_Drum_1, 1, Closed_Hi_Hat, 12}, \
-                                    {1, 1, 1, 12}, \
-                                    {1, 1, Closed_Hi_Hat, 12}, \
-                                    {Acoustic_Snare, 1, Closed_Hi_Hat, 12}, \
-                                    {1, 1, 1, 12}, \
-                                    {1, 1, Closed_Hi_Hat, 12}}};
-static const percussion Track_12 = {4, {{Metronome_Click, 1, 1, 4}, \
-                                        {Metronome_Click, 1, 1, 4}, \
-                                        {Metronome_Click, 1, 1, 4}, \
-                                        {Metronome_Click, 1, 1, 4}}};
+const percussion Track_11 = shuffle;
+const percussion Track_12 = metronome;
 
 const char *percussion_tracks[] = {"Jazz1", "Jazz2", "Jazz3", "Jazz4", "Jazz5", "Jazz6", "Rock1", "Rock2", "Rock3", "Rock4", "Shuffle", "Metronome"};
 
