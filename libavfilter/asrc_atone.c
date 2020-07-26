@@ -522,6 +522,7 @@ static void schedule_L_pattern(void *t)
     s->time_marker += 4*s->beat_dur;
 }
 
+/*---Cellular Automaton---*/
 static void multiple_notes(int note_time, int start, int length, int on, int *notes, AtoneContext *s)
 {
     if (on == 1){
@@ -600,7 +601,7 @@ static void ca_bass_lowest_notes (void *t)
 }
 
 /*Each note obtained is played as a 1/8 note
-Random number obtaine is % (2 * i + 1) to increase bias towards upper notes*/
+Random number obtained is % (2 * i + 1) to increase bias towards upper notes*/
 static void ca_bass_lower_eighth (void *t) 
 {
     AtoneContext *s = t;
@@ -887,6 +888,8 @@ static av_cold int init(AVFilterContext *ctx)
     s->note_map = av_malloc(sizeof(int) * s->height);
     s_size = get_scale(s);
     copy = s->ca_ruletype;
+    /*The neighbouring cells on which cells of next generation is determined as
+    in http://tones.wolfram.com/about/how-it-works*/
     while (copy > 0) {
         if (copy % 2 == 1){
             if (i % 2 == 0)
@@ -905,6 +908,8 @@ static av_cold int init(AVFilterContext *ctx)
         copy = copy >> 1; 
     }
 
+    /*In cellular automaton, the middle portion(s->height) is mapped to a scale 
+    The lower and upper octaves are mapped by subtracting and adding 12 respectively*/
     j = s_size/2 - (s->height+1)/4;
     for (i = 0; i < s->height; i++) {
         if (j < 0)
