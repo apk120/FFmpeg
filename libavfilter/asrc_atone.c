@@ -330,8 +330,7 @@ static void play_riff(int riff, int energy, int note_duration, int note_time, At
     int biv[] = {28, 0, 7, 0, 14, 0, 7, 4};
     unsigned rand; 
 
-    for (int i = 0; i < NPR; i++)
-    {
+    for (int i = 0; i < NPR; i++) {
         rand = av_lfg_get(&s->r) / 2;
         next = s->riffs[riff * NPR + i];
         if (next != H && next != R && ((energy + biv[i]) < rand % 100))
@@ -443,10 +442,10 @@ Reference : https://link.springer.com/chapter/10.1007%2F978-3-540-32003-6_56
 */
 static void schedule_0L_pattern(AtoneContext *s)
 {
-    int note_state = s->height / 2, dur_state = 1, sys_state = 0, size;
+    int note_state = s->height / 2, dur_state = 1, sys_state = 0, size = s->height;
     char c;
     
-    for (int i = 0; i < s->generations; i++){
+    for (int i = 0; i < s->generations; i++) {
         int j = 0, length = 0;
         char c;
 
@@ -462,8 +461,7 @@ static void schedule_0L_pattern(AtoneContext *s)
                 length += strlen(s->rule2) - 3;
             }
                 
-            else
-            {
+            else {
                 memcpy(s->nextgen+length, s->prevgen+j, 1);
                 length +=1;
             }
@@ -476,7 +474,7 @@ static void schedule_0L_pattern(AtoneContext *s)
 
     for (int i = 0 ; i < strlen(s->prevgen) ; i++) {
         c = s->prevgen[i]; 
-        switch(c){
+        switch(c) {
             case 'F': dur_state *= 2 ;break;
             case 'p': note_state++; if (note_state >= size) note_state -= size/2; break;
             case 'm': note_state--; if (note_state < 0) note_state += size/2;break;
@@ -496,21 +494,17 @@ static void schedule_L_pattern(void *t)
     
     sum = 0;
     state = s->lstate; 
-    while (sum < 8)
-    {
+    while (sum < 8) {
         sum += s->system[state].dur;
         state++;
     }
     
     if (state < s->max)
-        for (int i = s->lstate; i < state ; i++)
-        {
-            if (s->system[i].note == R)
-            {
+        for (int i = s->lstate; i < state ; i++) {
+            if (s->system[i].note == R) {
                 note_time += 4 * s->beat_dur * s->system[i].dur / 8;
             }
-            else
-            {
+            else {
                 schedule_noteon(0, s->system[i].note, note_time, s->velocity, s);
                 note_time += 4 * s->beat_dur*s->system[i].dur / 8;
                 schedule_noteoff(0, s->system[i].note, note_time, s);
@@ -541,7 +535,7 @@ static void cyclic_generate (int *curr, int *next, int *keys, int *nbor, int *ru
     for (int i = 0; i < 32; i++) {
         int c = 0;
 
-        for (int j = 0; j < size; j++){
+        for (int j = 0; j < size; j++) {
             c +=  curr[(i + nbor[j]+ 32) % 32] << j;
         }
         next[i] = ruleset[c];
